@@ -1,0 +1,20 @@
+﻿@{
+    ViewData["Title"] = "Indonesian HTML News with Dotnet";
+}
+@model List<NewsHeader>
+
+
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    @foreach (var d in Model)
+    {
+        <h1>@d.Title</h1>
+        <ol>
+        @foreach (var n in d.News)
+        {
+            <li><a href="@n.ProxyUrl">@n.Title</a></li>    
+        }
+        </ol>
+    }
+</div>

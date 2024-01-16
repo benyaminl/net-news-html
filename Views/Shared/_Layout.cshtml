@@ -1,0 +1,17 @@
+﻿<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 2.0//EN">
+<html>
+<head>
+    <title>@ViewData["Title"] - net_news_html</title>
+</head>
+<body>
+    <div class="container">
+        @RenderBody()
+    </div>
+    
+    <div class="container">
+        &copy; 2024 - DotNet HTML News
+    </div>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
