@@ -23,4 +23,21 @@ public class ParserHelper
         
         return document;
     }
+
+    public static IDocument RemoveAllComment(IDocument document)
+    {
+        foreach (var el in document.QuerySelectorAll("*"))
+        {
+            for (int i = 0; i < el.ChildNodes.Length; i++)
+            {
+                var node = el.ChildNodes[i];
+                if (node.NodeType == NodeType.Comment)
+                {
+                    node.RemoveFromParent();
+                }
+            }
+        }
+
+        return document;
+    }
 }

@@ -44,7 +44,7 @@ public class KontanParserService : IParserService
             _listNews.Add(new NewsItem()
             {
                 Title = title,
-                Url = url
+                Url = url +"?page=all"
             });
         }
         
@@ -63,13 +63,14 @@ public class KontanParserService : IParserService
         IDocument document = await parser.ParseDocumentAsync(resp);
         
         document = ParserHelper.ParseWithProxy(document);
+        document = ParserHelper.RemoveAllComment(document);
 
         var article = document.QuerySelector("*[itemprop=\"articleBody\"]");
         article.QuerySelector(".boxdonasi").Remove();
         var img = document.QuerySelector(".img-detail-desk").ToHtml();
         var title = document.QuerySelector(".detail-desk").ToHtml();
         
-        foreach (var el in article.QuerySelectorAll(".track-bacajuga-inside"))
+        foreach (var el in article.QuerySelectorAll(".track-bacajuga-inside, .pagination"))
         {
             el.ParentElement.Remove();
         }
@@ -77,7 +78,8 @@ public class KontanParserService : IParserService
         article.QuerySelector(".track-gnews").ParentElement.Remove();
         // article.QuerySelector("*[d-widget]").Remove();
         
-        foreach (var el in article.QuerySelectorAll("script,link, iframe, *[d-widget], .mar-v-10, .heightads250, h2, style, #share-it, .ads-partner-wrap"))
+        foreach (var el in article.QuerySelectorAll("script,link, iframe, *[d-widget], " +
+                                    ".mar-v-10, .heightads250, h2, style, #share-it, .ads-partner-wrap, .kgnw-root"))
         {
             el.Remove();
         }

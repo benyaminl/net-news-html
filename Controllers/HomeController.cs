@@ -16,11 +16,15 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
         List<IParserService> parserServices =
         [
             service.GetService<KontanParserService>(),
-            service.GetService<JagatReviewParserService>()
+            service.GetService<JagatReviewParserService>(),
+            service.GetService<KontanParserService>()
         ];
 
-        string[] titles = ["Kontan Investasi", "JagatReview", "Kontan Berita"];
-        string[] homeUrls = ["https://investasi.kontan.co.id", "https://jagatreview.com", "https://news.kontan.co.id"];
+        string[] titles = ["Kontan Investasi", "JagatReview Notebook", "Kontan Berita"];
+        string[] homeUrls = [
+            "https://investasi.kontan.co.id", 
+            "https://www.jagatreview.com/category/mobile-computing/", 
+            "https://nasional.kontan.co.id"];
         
         List<NewsHeader> data = [];
         
@@ -61,10 +65,14 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
         List<IParserService> parserServices =
         [
             service.GetService<KontanParserService>(),
-            service.GetService<JagatReviewParserService>()
+            service.GetService<JagatReviewParserService>(),
+            service.GetService<KontanParserService>()
         ];
         
-        string[] homeUrls = ["https://investasi.kontan.co.id", "https://jagatreview.com", "https://news.kontan.co.id"];
+        string[] homeUrls = [
+            "https://investasi.kontan.co.id", 
+            "https://www.jagatreview.com", 
+            "https://nasional.kontan.co.id"];
         string result = "";
 
         for (int i = 0; i < homeUrls.Length; i++)
