@@ -89,6 +89,7 @@ public class JagatReviewParserService : IParserService
             el.ParentElement.Remove();
         }
         
-        return "<style>img {max-width: 100%; height: auto !important;}</style>" + article.ToHtml();
+        return "<style>img {max-width: 100%; height: auto !important;}</style>" + article.ToHtml() 
+            +"<br><a href='"+url+"'>Source Berita</a>";
     }
 }

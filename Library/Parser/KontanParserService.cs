@@ -87,6 +87,6 @@ public class KontanParserService : IParserService
         // var obj = article.QuerySelector("#div-belowarticle-Investasi");
         // article.RemoveChild(obj.PreviousElementSibling.PreviousElementSibling);
         
-        return  "<br/><br/>" + title + "<br/><br/>"+img + article.ToHtml();
+        return  "<br/><br/>" + title + "<br/><br/>"+img + article.ToHtml()+"<br><a href='"+url+"'>Source Berita</a>";
     }
 }

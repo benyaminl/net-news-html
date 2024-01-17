@@ -3,10 +3,13 @@
 }
 @model List<NewsHeader>
 
-
+<center>
+    <h1 style="margin-bottom: 0px;">Berita Indonesia</h1>
+    <h5 style="margin-top: 0px;">dalam HTML</h5>
+</center>
+<hr/>
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
     @foreach (var d in Model)
     {
         <h1>@d.Title</h1>

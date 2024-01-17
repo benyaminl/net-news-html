@@ -9,6 +9,7 @@ public class ParserHelper
     public static IDocument ParseWithProxy(IDocument document)
     {
         var imgs = document.QuerySelectorAll<IHtmlImageElement>("img");
+        var pics = document.QuerySelectorAll<IHtmlPictureElement>("picture");
         var urls = document.QuerySelectorAll<IHtmlAnchorElement>("a");
         
         foreach (var i in imgs)
@@ -19,6 +20,14 @@ public class ParserHelper
         foreach (var u in urls)
         {
             u.Href = "/Proxy/" + HttpUtility.UrlEncode(u.Href);
+        }
+        
+        foreach (var p in pics)
+        {
+            var picImg = p.QuerySelector<IHtmlImageElement>("img");
+            picImg.Attributes.RemoveNamedItem("srcset");
+            p.After(picImg);
+            p.Remove();
         }
         
         return document;
