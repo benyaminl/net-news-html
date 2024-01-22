@@ -2,7 +2,8 @@ using net_news_html.Library.Parser;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var redisUrl = builder.Configuration.GetValue<string>("REDIS_URL");
+Console.WriteLine("URL: " + redisUrl);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient("Firefox", c =>
@@ -11,7 +12,7 @@ builder.Services.AddHttpClient("Firefox", c =>
 builder.Services.AddTransient<KontanParserService>();
 builder.Services.AddTransient<JagatReviewParserService>();
 builder.Services.AddSingleton<ConnectionMultiplexer>(x => ConnectionMultiplexer
-    .Connect("localhost"));
+    .Connect(redisUrl));
 
 var app = builder.Build();
 
