@@ -1,9 +1,11 @@
+using System.Text.Json;
 using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using net_news_html.Library.Interface;
 using net_news_html.Models;
+using StackExchange.Redis;
 
 namespace net_news_html.Library.Parser;
 
@@ -11,12 +13,14 @@ public class KontanParserService : IParserService
 {
     private HttpClient _http;
     public string listUrl = "";
+    private IDatabase _redis;
 
     private List<NewsItem> _listNews = new List<NewsItem>();
     
-    public KontanParserService(IHttpClientFactory _httpClientFactory)
+    public KontanParserService(IHttpClientFactory _httpClientFactory, ConnectionMultiplexer _redisFactory)
     {
         _http = _httpClientFactory.CreateClient("Firefox");
+        _redis = _redisFactory.GetDatabase();
     }
 
     public void SetListUrl(string url)
@@ -31,6 +35,15 @@ public class KontanParserService : IParserService
 
     public async Task<IParserService> FetchList()
     {
+        #region redis cache
+        var data = _redis.StringGet(listUrl);
+        if (!data.IsNull)
+        {
+            _listNews = JsonSerializer.Deserialize<List<NewsItem>>(data);
+            return this;
+        }
+        #endregion
+        
         var resp = await _http.GetStringAsync(listUrl);
         IHtmlParser parser = new HtmlParser();
         IDocument document = await parser.ParseDocumentAsync(resp);
@@ -47,6 +60,10 @@ public class KontanParserService : IParserService
                 Url = url +"?page=all"
             });
         }
+        
+        #region redis set data
+        _redis.StringSet(listUrl, JsonSerializer.Serialize(_listNews), TimeSpan.FromMinutes(30));
+        #endregion
         
         return this;
     }

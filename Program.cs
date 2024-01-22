@@ -1,4 +1,5 @@
 using net_news_html.Library.Parser;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,8 @@ builder.Services.AddHttpClient("Firefox", c =>
         "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"));
 builder.Services.AddTransient<KontanParserService>();
 builder.Services.AddTransient<JagatReviewParserService>();
+builder.Services.AddSingleton<ConnectionMultiplexer>(x => ConnectionMultiplexer
+    .Connect("localhost"));
 
 var app = builder.Build();
 
