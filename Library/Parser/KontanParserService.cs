@@ -75,6 +75,14 @@ public class KontanParserService : IParserService
 
     public async Task<string> GetParsePage(string url)
     {
+        #region redis cache
+        var data = _redis.StringGet(url);
+        if (!data.IsNull)
+        {
+            return data;
+        }
+        #endregion
+        
         var resp = await _http.GetStringAsync(url);
         IHtmlParser parser = new HtmlParser();
         IDocument document = await parser.ParseDocumentAsync(resp);
@@ -104,6 +112,12 @@ public class KontanParserService : IParserService
         // var obj = article.QuerySelector("#div-belowarticle-Investasi");
         // article.RemoveChild(obj.PreviousElementSibling.PreviousElementSibling);
         
-        return  "<br/><br/>" + title + "<br/><br/>"+img + article.ToHtml()+"<br><a href='"+url+"'>Source Berita</a>";
+        var returnVal =  "<br/><br/>" + title + "<br/><br/>"+img + article.ToHtml()+"<br><a href='"+url+"'>Source Berita</a>";
+        
+        #region redis set data
+        _redis.StringSet(url, returnVal, TimeSpan.FromHours(6));
+        #endregion
+        
+        return returnVal;
     }
 }
