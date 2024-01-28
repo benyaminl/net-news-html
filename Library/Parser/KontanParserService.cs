@@ -120,4 +120,23 @@ public class KontanParserService : IParserService
         
         return returnVal;
     }
+
+    public DateTime GetLastUpdate()
+    {
+        var newDate = DateTime.Now;
+        #region redis cache
+        var data = _redis.StringGet($"date:{listUrl}");
+        if (!data.IsNull)
+        {
+            var dateTime = JsonSerializer.Deserialize<DateTime>(data);
+            return dateTime;
+        }
+        else
+        {
+            _redis.StringSet($"date:{listUrl}", JsonSerializer.Serialize(newDate), TimeSpan.FromMinutes(30));
+        }
+        #endregion
+
+        return newDate;
+    }
 }

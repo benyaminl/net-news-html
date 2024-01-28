@@ -8,5 +8,6 @@ public interface IParserService
     public string GetListUrl();
     public Task<IParserService> FetchList();
     public List<NewsItem> GetNewsItems();
+    public DateTime GetLastUpdate();
     public Task<string> GetParsePage(string url);
 }

@@ -32,15 +32,17 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
         {
             var ps = parserServices[i];
             ps.SetListUrl(homeUrls[i]);
-            
-            var list = (await ps.FetchList()).GetNewsItems();
-            var header = new NewsHeader()
-            {
-                Title = titles[i],
-                News = list
-            };
+
+            var newsSource = await ps.FetchList();
+
+            var header = new NewsHeader(
+                title: titles[i],
+                data: newsSource.GetNewsItems(),
+                date: newsSource.GetLastUpdate()
+            );
             
             data.Add(header);
+            
         }
         
         return View(data);

@@ -13,6 +13,7 @@
     @foreach (var d in Model)
     {
         <h1>@d.Title</h1>
+        <i>Last Update : @d.LastUpdate</i>
         <ol>
         @foreach (var n in d.News)
         {
