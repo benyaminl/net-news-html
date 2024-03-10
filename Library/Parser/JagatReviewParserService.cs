@@ -118,7 +118,7 @@ public class JagatReviewParserService : IParserService
             +"<br><a href='"+url+"'>Source Berita</a>";
         
         #region redis set data
-        _redis.StringSet(url, returnVal, TimeSpan.FromHours(6));
+        _redis.StringSet(url, returnVal, TimeSpan.FromHours(72));
         #endregion
         
         return returnVal;

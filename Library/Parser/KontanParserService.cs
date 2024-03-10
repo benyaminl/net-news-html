@@ -91,7 +91,10 @@ public class KontanParserService : IParserService
         document = ParserHelper.RemoveAllComment(document);
 
         var article = document.QuerySelector("*[itemprop=\"articleBody\"]");
-        article.QuerySelector(".boxdonasi").Remove();
+        #region remove useless things
+        article.QuerySelector(".boxdonasi")?.Remove();
+        article.QuerySelector(".track-lanjutbaca")?.Remove();
+        #endregion
         var img = document.QuerySelector(".img-detail-desk").ToHtml();
         var title = document.QuerySelector(".detail-desk").ToHtml();
         
