@@ -48,11 +48,11 @@ public class KontanParserService : IParserService
         IHtmlParser parser = new HtmlParser();
         IDocument document = await parser.ParseDocumentAsync(resp);
         
-        foreach (var el in document.QuerySelectorAll("#list-news li"))
+        foreach (var el in document.QuerySelectorAll("#list-news li, .list-berita li"))
         {
             var head = el.QuerySelector<IHtmlAnchorElement>("h1 a");
-            string title = head.Text();
-            string url = head.Href;
+            string title = head!.Text();
+            string url = head!.Href.Replace("about:","https:");
             
             _listNews.Add(new NewsItem()
             {
@@ -92,18 +92,18 @@ public class KontanParserService : IParserService
 
         var article = document.QuerySelector("*[itemprop=\"articleBody\"]");
         #region remove useless things
-        article.QuerySelector(".boxdonasi")?.Remove();
+        article!.QuerySelector(".boxdonasi")?.Remove();
         article.QuerySelector(".track-lanjutbaca")?.Remove();
         #endregion
-        var img = document.QuerySelector(".img-detail-desk").ToHtml();
-        var title = document.QuerySelector(".detail-desk").ToHtml();
+        var img = document.QuerySelector(".img-detail-desk")!.ToHtml();
+        var title = document.QuerySelector(".detail-desk")!.ToHtml();
         
         foreach (var el in article.QuerySelectorAll(".track-bacajuga-inside, .pagination"))
         {
-            el.ParentElement.Remove();
+            el.ParentElement!.Remove();
         }
         
-        article.QuerySelector(".track-gnews").ParentElement.Remove();
+        article.QuerySelector(".track-gnews")!.ParentElement.Remove();
         // article.QuerySelector("*[d-widget]").Remove();
         
         foreach (var el in article.QuerySelectorAll("script,link, iframe, *[d-widget], " +

@@ -16,15 +16,17 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
         List<IParserService> parserServices =
         [
             service.GetService<KontanParserService>(),
+            service.GetService<KontanParserService>(),
+            service.GetService<KontanParserService>(),
             service.GetService<JagatReviewParserService>(),
-            service.GetService<KontanParserService>()
         ];
 
-        string[] titles = ["Kontan Investasi", "JagatReview Notebook", "Kontan Berita"];
+        string[] titles = ["Kontan Investasi", "Kontan Fintech","Kontan Berita", "JagatReview Notebook" ];
         string[] homeUrls = [
-            "https://investasi.kontan.co.id", 
-            "https://www.jagatreview.com/category/mobile-computing/", 
-            "https://nasional.kontan.co.id"];
+            "https://investasi.kontan.co.id",
+            "https://www.kontan.co.id/search/?search=fintech",             
+            "https://nasional.kontan.co.id",
+            "https://www.jagatreview.com/category/mobile-computing/" ];
         
         List<NewsHeader> data = [];
         
@@ -62,19 +64,23 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
     [HttpGet("/news/{url}")]
     public async Task<IActionResult> News([FromRoute] string url)
     {
+        Console.WriteLine(url);
         url = HttpUtility.UrlDecode(url);
         
         List<IParserService> parserServices =
         [
-            service.GetService<KontanParserService>(),
-            service.GetService<JagatReviewParserService>(),
-            service.GetService<KontanParserService>()
+            service!.GetService<KontanParserService>()!,
+            service!.GetService<KontanParserService>()!,            
+            service!.GetService<KontanParserService>()!,
+            service!.GetService<JagatReviewParserService>()!,
         ];
         
         string[] homeUrls = [
-            "https://investasi.kontan.co.id", 
-            "https://www.jagatreview.com", 
-            "https://nasional.kontan.co.id"];
+            "https://investasi.kontan.co.id",
+            "https://keuangan.kontan.co.id",             
+            "https://nasional.kontan.co.id",
+            "https://www.jagatreview.com" ];
+
         string result = "";
 
         for (int i = 0; i < homeUrls.Length; i++)
