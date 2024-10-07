@@ -13,7 +13,7 @@
     @foreach (var d in Model)
     {
         <h1>@d.Title</h1>
-        <i>Last Update : @d.LastUpdate</i>
+        <i>Last Update : @d.LastUpdate.ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'z")</i>
         <ol>
         @foreach (var n in d.News)
         {
