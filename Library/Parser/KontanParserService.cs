@@ -3,6 +3,7 @@ using AngleSharp;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
+using AngleSharp.Text;
 using net_news_html.Library.Interface;
 using net_news_html.Models;
 using StackExchange.Redis;
@@ -51,14 +52,22 @@ public class KontanParserService : IParserService
         foreach (var el in document.QuerySelectorAll("#list-news li, .list-berita li"))
         {
             var head = el.QuerySelector<IHtmlAnchorElement>("h1 a");
-            string title = head!.Text();
-            string url = head!.Href.Replace("about:","https:");
-            
-            _listNews.Add(new NewsItem()
-            {
-                Title = title,
-                Url = url +"?page=all"
-            });
+            try {
+                string title = head!.Text();
+                string url = head!.Href.Replace("about:","https:");
+                
+                if (!url.Contains("insight.kontan"))
+                {
+                    _listNews.Add(new NewsItem()
+                    {
+                        Title = title,
+                        Url = url +"?page=all"
+                    });
+                }
+            }
+            catch(Exception e) {
+                
+            }
         }
         
         #region redis set data

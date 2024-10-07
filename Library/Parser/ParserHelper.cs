@@ -25,9 +25,15 @@ public class ParserHelper
         foreach (var p in pics)
         {
             var picImg = p.QuerySelector<IHtmlImageElement>("img");
-            picImg.Attributes.RemoveNamedItem("srcset");
-            p.After(picImg);
-            p.Remove();
+            if (picImg != null) 
+            {
+                if (picImg.Attributes.GetNamedItem("srcset") != null)
+                {
+                    picImg.Attributes.RemoveNamedItem("srcset");
+                    p.After(picImg);
+                    p.Remove();
+                }
+            }
         }
         
         return document;

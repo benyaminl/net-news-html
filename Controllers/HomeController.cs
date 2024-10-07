@@ -27,26 +27,35 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
             "https://www.kontan.co.id/search/?search=fintech",             
             "https://nasional.kontan.co.id",
             "https://www.jagatreview.com/category/mobile-computing/" ];
-        
+
+        List<Task<IParserService>> tasks = [];
+
         List<NewsHeader> data = [];
-        
-        for (var i = 0; i < parserServices.Count; i++)
+        var i = 0;
+
+        for (i = 0; i < parserServices.Count; i++)
         {
             var ps = parserServices[i];
             ps.SetListUrl(homeUrls[i]);
 
-            var newsSource = await ps.FetchList();
+            tasks.Add(ps.FetchList());
+        }
 
+        await Task.WhenAll(tasks);
+        i = 0;
+        
+        foreach (var n in tasks)
+        {
             var header = new NewsHeader(
                 title: titles[i],
-                data: newsSource.GetNewsItems(),
-                date: newsSource.GetLastUpdate()
+                data: n.Result.GetNewsItems(),
+                date: n.Result.GetLastUpdate()
             );
             
             data.Add(header);
-            
+            i++;
         }
-        
+
         return View(data);
     }
 
