@@ -15,10 +15,10 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
     {
         List<IParserService> parserServices =
         [
-            service.GetService<KontanParserService>(),
-            service.GetService<KontanParserService>(),
-            service.GetService<KontanParserService>(),
-            service.GetService<JagatReviewParserService>(),
+            service!.GetService<KontanParserService>()!,
+            service!.GetService<KontanParserService>()!,
+            service!.GetService<KontanParserService>()!,
+            service!.GetService<JagatReviewParserService>()!,
         ];
 
         string[] titles = ["Kontan Investasi", "Kontan Fintech","Kontan Berita", "JagatReview Notebook" ];
@@ -100,6 +100,11 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
             {
                 result = await parserServices[i].GetParsePage(url);
             }
+        }
+
+        if (result == "")
+        {
+            result = $"There are something wrong, go to <a href='{url}'>Source Page</a> directly.";
         }
         
         return View(model: result);
