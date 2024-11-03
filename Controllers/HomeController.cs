@@ -11,50 +11,41 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
 {
     private readonly ILogger<HomeController> _logger = logger;
 
+
     public async Task<IActionResult> Index()
     {
-        List<IParserService> parserServices =
-        [
+        var parserServices = new List<IParserService>
+        {
             service!.GetService<KontanParserService>()!,
             service!.GetService<KontanParserService>()!,
             service!.GetService<KontanParserService>()!,
             service!.GetService<JagatReviewParserService>()!,
-        ];
+        };
 
-        string[] titles = ["Kontan Investasi", "Kontan Fintech","Kontan Berita", "JagatReview Notebook" ];
-        string[] homeUrls = [
+        var titles = new[] { "Kontan Investasi", "Kontan Fintech", "Kontan Berita", "JagatReview Notebook" };
+        var homeUrls = new[]
+        {
             "https://investasi.kontan.co.id",
-            "https://www.kontan.co.id/search/?search=fintech",             
+            "https://www.kontan.co.id/search/?search=fintech",
             "https://nasional.kontan.co.id",
-            "https://www.jagatreview.com/category/mobile-computing/" ];
+            "https://www.jagatreview.com/category/mobile-computing/"
+        };
 
-        List<Task<IParserService>> tasks = [];
-
-        List<NewsHeader> data = [];
-        var i = 0;
-
-        for (i = 0; i < parserServices.Count; i++)
+        var tasks = parserServices.Select((ps, i) =>
         {
-            var ps = parserServices[i];
             ps.SetListUrl(homeUrls[i]);
+            return ps.FetchList();
+        }).ToArray();
 
-            tasks.Add(ps.FetchList());
-        }
+        var results = await Task.WhenAll(tasks);
 
-        await Task.WhenAll(tasks);
-        i = 0;
-        
-        foreach (var n in tasks)
-        {
-            var header = new NewsHeader(
+        var data = Enumerable.Range(0, parserServices.Count)
+            .Select(i => new NewsHeader(
                 title: titles[i],
-                data: n.Result.GetNewsItems(),
-                date: n.Result.GetLastUpdate()
-            );
-            
-            data.Add(header);
-            i++;
-        }
+                data: results[i].GetNewsItems(),
+                date: results[i].GetLastUpdate()
+            ))
+            .ToList();
 
         return View(data);
     }
