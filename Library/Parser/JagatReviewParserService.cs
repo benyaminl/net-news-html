@@ -94,16 +94,32 @@ public class JagatReviewParserService : IParserService
         var title = document.QuerySelector(".jgpost__box h1")?.Text() ?? "";
         var article = document.QuerySelector(".jgpost__content")!;
         var pageCount = document.QuerySelectorAll(".toc-pages-list .post-page-numbers").Length;
-
-        for (int i = 1; i < pageCount; i++)
+        
+        var tasks = new List<Task<IElement>>();
+        for (int i = 2; i <= pageCount; i++)
         {
-            var anotherPage = await _http.GetStringAsync(url+"/"+(i+1));
-            var documentArticle = await parser.ParseDocumentAsync(anotherPage);
-
-            var articleSecondary = documentArticle.QuerySelector(".jgpost__content");
-            documentArticle.QuerySelector(".jgauthor.breakout")?.Remove();
-
-            article.AppendChild(articleSecondary!);
+            int pageNumber = i; // Capture the loop variable
+            tasks.Add(Task.Run(async () =>
+            {
+                var pageUrl = $"{url}/{pageNumber}";
+                var anotherPage = await _http.GetStringAsync(pageUrl);
+                var documentArticle = await parser.ParseDocumentAsync(anotherPage);
+        
+                var articleSecondary = documentArticle.QuerySelector(".jgpost__content");
+                documentArticle.QuerySelector(".jgauthor.breakout")?.Remove();
+        
+                return articleSecondary!;
+            }));
+        }
+        
+        var results = await Task.WhenAll(tasks);
+        
+        foreach (var articleSecondary in results)
+        {
+            if (articleSecondary != null)
+            {
+                article.AppendChild(articleSecondary);
+            }
         }
         
         foreach (var el in article.QuerySelectorAll(".jgtoc"))
