@@ -40,7 +40,7 @@ public class KontanParserService : IParserService
         var data = _redis.StringGet(listUrl);
         if (!data.IsNull)
         {
-            _listNews = JsonSerializer.Deserialize<List<NewsItem>>(data);
+            _listNews = JsonSerializer.Deserialize<List<NewsItem>>(data!)!;
             return this;
         }
         #endregion
@@ -82,13 +82,16 @@ public class KontanParserService : IParserService
         return _listNews;
     }
 
-    public async Task<string> GetParsePage(string url)
+    public async Task<ParsedNews> GetParsePage(string url)
     {
         #region redis cache
         var data = _redis.StringGet(url);
+        ParsedNews parsedNews;
+
         if (!data.IsNull)
         {
-            return data;
+            parsedNews = JsonSerializer.Deserialize<ParsedNews>(data!)!;
+            return parsedNews;
         }
         #endregion
         
@@ -105,14 +108,14 @@ public class KontanParserService : IParserService
         article.QuerySelector(".track-lanjutbaca")?.Remove();
         #endregion
         var img = document.QuerySelector(".img-detail-desk")!.ToHtml();
-        var title = document.QuerySelector(".detail-desk")!.ToHtml();
+        var title = document.QuerySelector(".detail-desk")!;
         
         foreach (var el in article.QuerySelectorAll(".track-bacajuga-inside, .pagination"))
         {
             el.ParentElement!.Remove();
         }
         
-        article.QuerySelector(".track-gnews")!.ParentElement.Remove();
+        article.QuerySelector(".track-gnews")!.ParentElement?.Remove();
         // article.QuerySelector("*[d-widget]").Remove();
         
         foreach (var el in article.QuerySelectorAll("script,link, iframe, *[d-widget], " +
@@ -124,13 +127,20 @@ public class KontanParserService : IParserService
         // var obj = article.QuerySelector("#div-belowarticle-Investasi");
         // article.RemoveChild(obj.PreviousElementSibling.PreviousElementSibling);
         
-        var returnVal =  "<br/><br/>" + title + "<br/><br/>"+img + article.ToHtml()+"<br><a href='"+url+"'>Source Berita</a>";
-        
+        var body =  "<br/><br/>" + title.ToHtml() + "<br/><br/>"+img + article.ToHtml()+"<br><a href='"+url+"'>Source Berita</a>";
+
+        parsedNews = new ParsedNews()
+        {
+            Title = title.Text(),
+            Body = body,
+            Url = url
+        };
+
         #region redis set data
-        _redis.StringSet(url, returnVal, TimeSpan.FromHours(6));
+        _redis.StringSet(url, JsonSerializer.Serialize(parsedNews), TimeSpan.FromHours(6));
         #endregion
         
-        return returnVal;
+        return parsedNews;
     }
 
     public DateTime GetLastUpdate()

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.CookiePolicy;
 using net_news_html.Library.Parser;
 using StackExchange.Redis;
 
@@ -12,7 +13,7 @@ builder.Services.AddHttpClient("Firefox", c =>
 builder.Services.AddTransient<KontanParserService>();
 builder.Services.AddTransient<JagatReviewParserService>();
 builder.Services.AddSingleton<ConnectionMultiplexer>(x => ConnectionMultiplexer
-    .Connect(redisUrl));
+    .Connect(redisUrl!));
 
 var app = builder.Build();
 
@@ -30,6 +31,13 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthorization();
+
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    MinimumSameSitePolicy = SameSiteMode.Strict,
+    HttpOnly = HttpOnlyPolicy.Always,
+    Secure = CookieSecurePolicy.Always
+});
 
 app.MapControllerRoute(
     name: "default",

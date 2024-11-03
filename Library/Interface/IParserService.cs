@@ -9,5 +9,5 @@ public interface IParserService
     public Task<IParserService> FetchList();
     public List<NewsItem> GetNewsItems();
     public DateTime GetLastUpdate();
-    public Task<string> GetParsePage(string url);
+    public Task<ParsedNews> GetParsePage(string url);
 }

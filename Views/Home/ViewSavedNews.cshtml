@@ -1,0 +1,47 @@
+@model List<net_news_html.Models.SavedNewsItem>
+
+@{
+    ViewData["Title"] = "Saved News";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+
+@if (Model.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Date Saved</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                var item = Model[i];
+                <tr>
+                    <td><a href="@item.ProxyUrl" target="_blank">@item.Title</a></td>
+                    <td>@item.SaveDate.ToString("g")</td>
+                    <td>
+                        <form asp-action="RemoveSavedNews" method="post">
+                            <input type="hidden" name="index" value="@i" />
+                            <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No saved news items.</p>
+}
+
+<a asp-action="Index" class="btn btn-primary">Back to Home</a>

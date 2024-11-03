@@ -1,6 +1,13 @@
-﻿@{
-    ViewData["Title"] = "Indonesian HTML News with Dotnet";
+@{
+    ViewData["Title"] = $"{Model.data.Title} | Indonesian Dotnet News";
 }
-@model string
-<a asp-controller="Home" asp-action="Index">Back To Home</a>
-@Html.Raw(Model)
+
+<div class="text-center">
+    <a href="@Url.Action("SaveNews", "Home", new { url = Model.data.Url, title = Model.data.Title })">(+) Save News</a>
+    <p>@Html.Raw(Model.body)</p>
+</div>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}

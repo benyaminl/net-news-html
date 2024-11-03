@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using net_news_html.Library.Interface;
@@ -81,7 +82,7 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
             "https://nasional.kontan.co.id",
             "https://www.jagatreview.com" ];
 
-        string result = "";
+        ParsedNews? result = null;
 
         for (int i = 0; i < homeUrls.Length; i++)
         {
@@ -93,17 +94,64 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
             }
         }
 
-        if (result == "")
+        if (result == null)
         {
-            result = $"There are something wrong, go to <a href='{url}'>Source Page</a> directly.";
+            result = new ParsedNews { 
+                Title = "Not Found", 
+                Body = $"There are something wrong, go to <a href='{url}'>Source Page</a> directly."
+            };
         }
         
-        return View(model: result);
+        return View(model: new {body = result.Body, data = result});
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+    }
+
+    // function to get data from query param with url, title then save to cookie with name "news"
+    [HttpGet("/save")]
+    public IActionResult SaveNews([FromQuery] string url, [FromQuery] string title)
+    {
+        var cookie = Request.Cookies["news"] ?? "";
+        List<SavedNewsItem> data = new List<SavedNewsItem>();
+        if (cookie != "")
+        {
+            data = JsonSerializer.Deserialize<List<SavedNewsItem>>(cookie)!;
+        }
+        
+        data.Add(new SavedNewsItem
+        {
+            Url = url,
+            Title = title,
+            SaveDate = DateTime.Now 
+        });
+
+        cookie = JsonSerializer.Serialize(data);
+
+        Response.Cookies.Append("news", cookie, new CookieOptions
+        {
+            Expires = DateTime.Now.AddDays(300),
+            SameSite = SameSiteMode.None,
+            Secure = true
+        });
+
+        return Redirect("~/saved");
+    }
+
+    // function that return data from cookie with name "news"
+    [HttpGet("/saved")]
+    public IActionResult Saved()
+    {
+        var cookie = Request.Cookies["news"] ?? "";
+        List<SavedNewsItem> data = new List<SavedNewsItem>();
+        if (cookie != "")
+        {
+            data = JsonSerializer.Deserialize<List<SavedNewsItem>>(cookie)!;
+        }
+
+        return View("~/Views/Home/ViewSavedNews.cshtml", data);
     }
 }
