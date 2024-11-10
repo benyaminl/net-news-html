@@ -134,8 +134,8 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
         Response.Cookies.Append("news", cookie, new CookieOptions
         {
             Expires = DateTime.Now.AddDays(300),
-            SameSite = SameSiteMode.None,
-            Secure = true
+            SameSite = SameSiteMode.Strict,
+            HttpOnly = false
         });
 
         return Redirect("~/saved");
@@ -172,8 +172,8 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
         Response.Cookies.Append("news", cookie, new CookieOptions
         {
             Expires = DateTime.Now.AddDays(300),
-            SameSite = SameSiteMode.None,
-            Secure = true
+            SameSite = SameSiteMode.Strict,
+            HttpOnly = false
         });
 
         return Redirect("~/saved");

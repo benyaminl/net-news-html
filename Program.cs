@@ -12,8 +12,15 @@ builder.Services.AddHttpClient("Firefox", c =>
         "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"));
 builder.Services.AddTransient<KontanParserService>();
 builder.Services.AddTransient<JagatReviewParserService>();
-builder.Services.AddSingleton<ConnectionMultiplexer>(x => ConnectionMultiplexer
+builder.Services.AddSingleton(x => ConnectionMultiplexer
     .Connect(redisUrl!));
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+    options.Cookie.HttpOnly = true;
+});
 
 var app = builder.Build();
 
@@ -29,15 +36,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
-app.UseAuthorization();
-
-app.UseCookiePolicy(new CookiePolicyOptions
-{
-    MinimumSameSitePolicy = SameSiteMode.Strict,
-    HttpOnly = HttpOnlyPolicy.Always,
-    Secure = CookieSecurePolicy.SameAsRequest
-});
 
 app.MapControllerRoute(
     name: "default",
