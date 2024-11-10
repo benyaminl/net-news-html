@@ -154,4 +154,28 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
 
         return View("~/Views/Home/ViewSavedNews.cshtml", data);
     }
+
+    [HttpGet("/remove-saved")]
+    public IActionResult RemoveSaved([FromQuery] string url)
+    {
+        var cookie = Request.Cookies["news"] ?? "";
+        List<SavedNewsItem> data = new List<SavedNewsItem>();
+        if (cookie != "")
+        {
+            data = JsonSerializer.Deserialize<List<SavedNewsItem>>(cookie)!;
+        }
+
+        data.RemoveAll(x => x.Url == url);
+
+        cookie = JsonSerializer.Serialize(data);
+
+        Response.Cookies.Append("news", cookie, new CookieOptions
+        {
+            Expires = DateTime.Now.AddDays(300),
+            SameSite = SameSiteMode.None,
+            Secure = true
+        });
+
+        return Redirect("~/saved");
+    }
 }
