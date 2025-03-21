@@ -15,6 +15,12 @@ public class ParserHelper
         foreach (var i in imgs)
         {
             i.Source = "/Proxy/" + HttpUtility.UrlEncode(i.Source);
+
+            if (i.Attributes.GetNamedItem("data-src") != null)
+            {
+                var dataSrc = i.Attributes.GetNamedItem("data-src")!.Value;
+                i.Source = "/Proxy/" + HttpUtility.UrlEncode(dataSrc);
+            }
         }
         
         foreach (var u in urls)
@@ -33,6 +39,8 @@ public class ParserHelper
                     p.After(picImg);
                     p.Remove();
                 }
+
+                
             }
         }
         

@@ -103,8 +103,10 @@ public class JagatReviewParserService : IParserService
             {
                 var pageUrl = $"{url}/{pageNumber}";
                 var anotherPage = await _http.GetStringAsync(pageUrl);
-                var documentArticle = await parser.ParseDocumentAsync(anotherPage);
+                IDocument documentArticle = await parser.ParseDocumentAsync(anotherPage);
         
+                documentArticle = ParserHelper.ParseWithProxy(documentArticle);
+                documentArticle = ParserHelper.RemoveAllComment(documentArticle);
                 var articleSecondary = documentArticle.QuerySelector(".jgpost__content");
                 documentArticle.QuerySelector(".jgauthor.breakout")?.Remove();
         
