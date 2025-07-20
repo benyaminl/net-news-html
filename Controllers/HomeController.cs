@@ -1,14 +1,19 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Web;
+using Library.Interface;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using net_news_html.Library.Interface;
 using net_news_html.Library.Parser;
 using net_news_html.Models;
+using net_news_html.Library.ViewModel;
 
 namespace net_news_html.Controllers;
 
-public class HomeController(ILogger<HomeController> logger, IServiceProvider service, IHttpClientFactory clientFactory) : Controller
+public class HomeController(ILogger<HomeController> logger, IServiceProvider service, IHttpClientFactory clientFactory, INewsStorage newsStorage, IDataProtectionProvider dataProtectionProvider, IPassStorage passStorage) : Controller
 {
     private readonly ILogger<HomeController> _logger = logger;
 
@@ -111,70 +116,66 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
+    private bool userLoggedIn = false;
+    public override async void OnActionExecuting(ActionExecutingContext context)
+    {
+        if (context.HttpContext.Request.Cookies["PassKeyId"] != null)
+        {
+            newsStorage = service!.GetService<INewsPersistenceStrorage>()!;
+            userLoggedIn = true;
+            var protector = dataProtectionProvider.CreateProtector("PassKeyAuth");
+        
+            var passKey = protector.Unprotect(Request.Cookies["PassKeyId"]!);
+            var passKeyData = await passStorage.GetPassKey(passKey);
+            if (passKeyData != null)
+            {
+                owner = passKeyData.Id;
+            }
+        
+        }
+        else
+        {
+            newsStorage = service!.GetService<INewsStorage>()!;
+        }
+        base.OnActionExecuting(context);
+    }
+
     // function to get data from query param with url, title then save to cookie with name "news"
     [HttpGet("/save")]
-    public IActionResult SaveNews([FromQuery] string url, [FromQuery] string title)
+    public async Task<IActionResult> SaveNews([FromQuery] string url, [FromQuery] string title)
     {
-        var cookie = Request.Cookies["news"] ?? "";
-        List<SavedNewsItem> data = new List<SavedNewsItem>();
-        if (cookie != "")
+        await newsStorage.SaveNewsAsync(new SavedNewsItem
         {
-            data = JsonSerializer.Deserialize<List<SavedNewsItem>>(cookie)!;
-        }
-        
-        data.Add(new SavedNewsItem
-        {
+            PassKeyId = owner ?? Guid.Empty,
             Url = url,
             Title = title,
             SaveDate = DateTime.Now 
         });
-
-        cookie = JsonSerializer.Serialize(data);
-
-        Response.Cookies.Append("news", cookie, new CookieOptions
-        {
-            Expires = DateTime.Now.AddDays(300),
-            SameSite = SameSiteMode.Strict,
-            HttpOnly = false
-        });
-
+        
         return Redirect("~/saved");
     }
 
+    private Guid? owner = null;
     // function that return data from cookie with name "news"
     [HttpGet("/saved")]
-    public IActionResult Saved()
+    public async Task<IActionResult> Saved()
     {
-        var cookie = Request.Cookies["news"] ?? "";
-        List<SavedNewsItem> data = new List<SavedNewsItem>();
-        if (cookie != "")
-        {
-            data = JsonSerializer.Deserialize<List<SavedNewsItem>>(cookie)!;
-        }
+        // TODO: Implement check user logged in or not 
 
-        return View("~/Views/Home/ViewSavedNews.cshtml", data);
+        var data = await newsStorage.GetNewsAsync(owner);
+        var viewModel = new SavedNewsViewModel()
+        {
+            listSavedNews = data,
+            loggedIn = userLoggedIn
+        };
+
+        return View("~/Views/Home/ViewSavedNews.cshtml", viewModel);
     }
 
     [HttpGet("/remove-saved")]
-    public IActionResult RemoveSaved([FromQuery] string url)
+    public async Task<IActionResult> RemoveSaved([FromQuery] string url)
     {
-        var cookie = Request.Cookies["news"] ?? "";
-        List<SavedNewsItem> data = new List<SavedNewsItem>();
-        if (cookie != "")
-        {
-            data = JsonSerializer.Deserialize<List<SavedNewsItem>>(cookie)!;
-        }
-
-        data.RemoveAll(x => x.Url == url);
-
-        cookie = JsonSerializer.Serialize(data);
-
-        Response.Cookies.Append("news", cookie, new CookieOptions
-        {
-            Expires = DateTime.Now.AddDays(300),
-            SameSite = SameSiteMode.Strict,
-            HttpOnly = false
-        });
+        await newsStorage.DeleteNewsAsync(url);
 
         return Redirect("~/saved");
     }

@@ -1,6 +1,12 @@
-using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.EntityFrameworkCore;
+using net_news_html.Library.Interface;
 using net_news_html.Library.Parser;
+using net_news_html.Library.Storage;
 using StackExchange.Redis;
+using Microsoft.AspNetCore.DataProtection;
+using net_news_html.Library.Usecase;
+using Library.Interface;
+using Library.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 var redisUrl = builder.Configuration.GetValue<string>("REDIS_URL");
@@ -9,11 +15,25 @@ Console.WriteLine("URL: " + redisUrl);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient("Firefox", c =>
     c.DefaultRequestHeaders.Add("User-Agent",
-        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"));
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0"));
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(builder.Configuration.GetValue<string>("DataProtectionKeysPath")!))
+    .SetApplicationName("net-news-html");
+
 builder.Services.AddTransient<KontanParserService>();
 builder.Services.AddTransient<JagatReviewParserService>();
 builder.Services.AddSingleton(x => ConnectionMultiplexer
     .Connect(redisUrl!));
+
+builder.Services.AddDbContext<NewsDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("SqliteFile")));
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<INewsStorage, NewsStorageCookieImpl>();
+builder.Services.AddScoped<INewsPersistenceStrorage, NewsStorageSqliteImpl>();
+builder.Services.AddScoped<ISyncCookieUsecase, SyncCookieDBUsecase>();
+builder.Services.AddScoped<IPassStorage, PassStorageSqliteImpl>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -23,6 +43,22 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 var app = builder.Build();
+
+// Ensure database is created and migrated
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<NewsDbContext>();
+        context.Database.Migrate(); // This applies pending migrations instead of just creating the DB
+        Console.WriteLine("Database path: " + context.Database.GetConnectionString());
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("An error occurred with the DB: " + ex.Message);
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
