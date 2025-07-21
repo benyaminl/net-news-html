@@ -39,8 +39,7 @@ public class UserNewsController
 
             Response.Cookies.Append("PassKeyId", encryptedId, new CookieOptions
             {
-                HttpOnly = true,
-                Secure = true,
+                HttpOnly = false,
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTimeOffset.UtcNow.AddDays(30)
             });
@@ -80,8 +79,7 @@ public class UserNewsController
 
         Response.Cookies.Append("PassKeyId", encryptedId, new CookieOptions
         {
-            HttpOnly = true,
-            Secure = true,
+            HttpOnly = false,
             SameSite = SameSiteMode.Strict,
             Expires = DateTimeOffset.UtcNow.AddDays(30)
         });
