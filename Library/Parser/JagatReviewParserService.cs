@@ -43,23 +43,30 @@ public class JagatReviewParserService : IParserService
             return this;
         }
         #endregion
-        
-        var resp = await _http.GetStringAsync(listUrl);
-        IHtmlParser parser = new HtmlParser();
-        IDocument document = await parser.ParseDocumentAsync(resp);
-        
-        foreach (var el in document.QuerySelectorAll(".ct__main *[id*='article-'] a h2"))
+
+        try
         {
-            var head = el.ParentElement;
-            string title = el.Text();
-            string url = ((IHtmlAnchorElement)head).Href;
-            
-            _listNews.Add(new NewsItem()
+            var resp = await _http.GetStringAsync(listUrl);
+            IHtmlParser parser = new HtmlParser();
+            IDocument document = await parser.ParseDocumentAsync(resp);
+            foreach (var el in document.QuerySelectorAll(".ct__main *[id*='article-'] a h2"))
             {
-                Title = title,
-                Url = url
-            });
+                var head = el.ParentElement;
+                string title = el.Text();
+                string url = ((IHtmlAnchorElement)head).Href;
+                
+                _listNews.Add(new NewsItem()
+                {
+                    Title = title,
+                    Url = url
+                });
+            }
         }
+        catch (Exception)
+        {
+            _listNews.Clear();
+            return this;
+        }        
         
         #region redis set data
         _redis.StringSet(listUrl, JsonSerializer.Serialize(_listNews), TimeSpan.FromMinutes(30));

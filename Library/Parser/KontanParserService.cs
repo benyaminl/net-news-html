@@ -45,29 +45,35 @@ public class KontanParserService : IParserService
         }
         #endregion
         
-        var resp = await _http.GetStringAsync(listUrl);
-        IHtmlParser parser = new HtmlParser();
-        IDocument document = await parser.ParseDocumentAsync(resp);
-        
-        foreach (var el in document.QuerySelectorAll("#list-news li, .list-berita li"))
-        {
-            var head = el.QuerySelector<IHtmlAnchorElement>("h1 a");
-            try {
-                string title = head!.Text();
-                string url = head!.Href.Replace("about:","https:");
-                
-                if (!url.Contains("insight.kontan"))
-                {
-                    _listNews.Add(new NewsItem()
+        try {
+            var resp = await _http.GetStringAsync(listUrl);
+            IHtmlParser parser = new HtmlParser();
+            IDocument document = await parser.ParseDocumentAsync(resp);
+            
+            foreach (var el in document.QuerySelectorAll("#list-news li, .list-berita li"))
+            {
+                var head = el.QuerySelector<IHtmlAnchorElement>("h1 a");
+                try {
+                    string title = head!.Text();
+                    string url = head!.Href.Replace("about:","https:");
+                    
+                    if (!url.Contains("insight.kontan"))
                     {
-                        Title = title,
-                        Url = url +"?page=all"
-                    });
+                        _listNews.Add(new NewsItem()
+                        {
+                            Title = title,
+                            Url = url +"?page=all"
+                        });
+                    }
+                }
+                catch(Exception e) {
+                    
                 }
             }
-            catch(Exception e) {
-                
-            }
+        }
+        catch(Exception) {
+            _listNews.Clear();
+            return this;
         }
         
         #region redis set data
