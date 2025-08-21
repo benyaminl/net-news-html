@@ -23,10 +23,10 @@ builder.Services.AddDataProtection()
 
 builder.Services.AddTransient<KontanParserService>();
 builder.Services.AddTransient<JagatReviewParserService>();
-builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
+builder.Services.AddSingleton<ConnectionMultiplexer>(_ =>
 {
     var configuration = ConfigurationOptions.Parse(redisUrl!);
-    configuration.ConnectRetry = 10;
+    configuration.ConnectRetry = 3;
     configuration.ReconnectRetryPolicy = new ExponentialRetry(5000);
     configuration.KeepAlive = 180;
     configuration.ConnectTimeout = 30000;
