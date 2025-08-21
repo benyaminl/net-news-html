@@ -23,8 +23,18 @@ builder.Services.AddDataProtection()
 
 builder.Services.AddTransient<KontanParserService>();
 builder.Services.AddTransient<JagatReviewParserService>();
-builder.Services.AddSingleton(x => ConnectionMultiplexer
-    .Connect(redisUrl!));
+builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
+{
+    var configuration = ConfigurationOptions.Parse(redisUrl!);
+    configuration.ConnectRetry = 10;
+    configuration.ReconnectRetryPolicy = new ExponentialRetry(5000);
+    configuration.KeepAlive = 180;
+    configuration.ConnectTimeout = 30000;
+    configuration.SyncTimeout = 30000;
+    configuration.AbortOnConnectFail = false;
+    
+    return ConnectionMultiplexer.Connect(configuration);
+});
 
 builder.Services.AddDbContext<NewsDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("SqliteFile")));
