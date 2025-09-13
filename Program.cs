@@ -15,7 +15,7 @@ Console.WriteLine("URL: " + redisUrl);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient("Firefox", c =>
     c.DefaultRequestHeaders.Add("User-Agent",
-        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:137.0) Gecko/20100101 Firefox/137.0"));
+        "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0"));
 
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(builder.Configuration.GetValue<string>("DataProtectionKeysPath")!))
@@ -23,6 +23,7 @@ builder.Services.AddDataProtection()
 
 builder.Services.AddTransient<KontanParserService>();
 builder.Services.AddTransient<JagatReviewParserService>();
+builder.Services.AddTransient<TempoParserService>();
 builder.Services.AddSingleton<ConnectionMultiplexer>(_ =>
 {
     var configuration = ConfigurationOptions.Parse(redisUrl!);
@@ -78,7 +79,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();

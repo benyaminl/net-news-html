@@ -26,15 +26,17 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
             service!.GetService<KontanParserService>()!,
             service!.GetService<KontanParserService>()!,
             service!.GetService<JagatReviewParserService>()!,
+            service!.GetService<TempoParserService>()!,
         };
 
-        var titles = new[] { "Kontan Investasi", "Kontan Fintech", "Kontan Berita", "JagatReview Notebook" };
+        var titles = new[] { "Kontan Investasi", "Kontan Fintech", "Kontan Berita", "JagatReview Notebook", "Tempo Ekonomi" };
         var homeUrls = new[]
         {
             "https://investasi.kontan.co.id",
             "https://www.kontan.co.id/search/?search=fintech",
             "https://nasional.kontan.co.id",
-            "https://www.jagatreview.com/category/mobile-computing/"
+            "https://www.jagatreview.com/category/mobile-computing/",
+            "https://www.tempo.co/ekonomi"
         };
 
         var tasks = parserServices.Select((ps, i) =>
@@ -79,13 +81,16 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
             service!.GetService<KontanParserService>()!,            
             service!.GetService<KontanParserService>()!,
             service!.GetService<JagatReviewParserService>()!,
+            service!.GetService<TempoParserService>()!,
         ];
         
         string[] homeUrls = [
             "https://investasi.kontan.co.id",
-            "https://keuangan.kontan.co.id",             
+            "https://keuangan.kontan.co.id",
             "https://nasional.kontan.co.id",
-            "https://www.jagatreview.com" ];
+            "https://www.jagatreview.com",
+            "https://www.tempo.co" 
+        ];
 
         ParsedNews? result = null;
 
