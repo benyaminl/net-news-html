@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.EntityFrameworkCore;
 using net_news_html.Library.Interface;
 using net_news_html.Library.Parser;
@@ -14,8 +15,13 @@ Console.WriteLine("URL: " + redisUrl);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient("Firefox", c =>
+{
     c.DefaultRequestHeaders.Add("User-Agent",
-        "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0"));
+        "Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0");
+}).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+{
+    AutomaticDecompression = DecompressionMethods.All
+});
 
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(builder.Configuration.GetValue<string>("DataProtectionKeysPath")!))

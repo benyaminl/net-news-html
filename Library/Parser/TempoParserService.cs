@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 using net_news_html.Library.Interface;
 using net_news_html.Models;
@@ -19,10 +20,20 @@ public class TempoParserService : IParserService
     public TempoParserService(IHttpClientFactory httpClientFactory, ConnectionMultiplexer redisFactory, IConfiguration configuration)
     {
         _configuration = configuration;
-        _httpClient = httpClientFactory.CreateClient();
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:142.0) Gecko/20100101 Firefox/142.0");
-        _httpClient.DefaultRequestHeaders.Add("Referer", "https://www.tempo.co/");
+        
+        // Use the named client configured with decompression support
+        _httpClient = httpClientFactory.CreateClient("Firefox");
+        
+        // Configure automatic decompression
+        if (_httpClient.DefaultRequestHeaders.Contains("Accept-Encoding"))
+        {
+            _httpClient.DefaultRequestHeaders.Remove("Accept-Encoding");
+        }
+        
+        _httpClient.DefaultRequestHeaders.Add("Referer", "https://www.tempo.co/indeks?category=rubrik&id=9&rubric_slug=ekonomi&page=1");
         _httpClient.DefaultRequestHeaders.Add("X-Platform-Application", "desktop");
+        _httpClient.DefaultRequestHeaders.Add("Pragma", "no-cache");
+        _httpClient.DefaultRequestHeaders.Add("Cache-Control", "no-cache");
 
         _redis = redisFactory.GetDatabase();
     }
