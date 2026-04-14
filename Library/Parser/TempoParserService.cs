@@ -52,32 +52,35 @@ public class TempoParserService : IParserService
         
         try
         {
-            // Build URL with parameters
+            // Build URL for the rubrik page
             var baseUrl = _configuration["Tempo:BaseUrl"];
-            var requestUrl = $"{baseUrl}?status=published&limit=25&page=1&page_size=25&order_published_at=DESC&rubric_slug={_rubrikSlug.ToLower()}";
+            var requestUrl = $"{baseUrl}/{_rubrikSlug}";
             
-            // Make GET request to Tempo API
+            // Fetch HTML page
             var response = await _httpClient.GetStringAsync(requestUrl);
             
-            // Parse JSON response
-            var jsonResponse = JsonDocument.Parse(response);
+            // Parse HTML with AngleSharp
+            var parser = new HtmlParser();
+            var document = await parser.ParseDocumentAsync(response);
             
-            // Transform articles into NewsItem objects
+            // Extract article links
             _listNews.Clear();
-            if (jsonResponse.RootElement.TryGetProperty("data", out var data))
+            var links = document.QuerySelectorAll("a[href^='/ekonomi/']");
+            
+            foreach (var link in links)
             {
-                foreach (var article in data.EnumerateArray())
+                var href = link.GetAttribute("href");
+                var title = link.TextContent.Trim();
+                
+                // Skip empty titles or non-article links
+                if (string.IsNullOrWhiteSpace(title) || !href.Contains("-"))
+                    continue;
+                
+                _listNews.Add(new NewsItem()
                 {
-                    if (article.TryGetProperty("title_digital", out var title) && 
-                        article.TryGetProperty("canonical_url", out var canonicalUrl))
-                    {
-                        _listNews.Add(new NewsItem()
-                        {
-                            Title = title.GetString() ?? "",
-                            Url = $"https://www.tempo.co/{canonicalUrl.GetString()}"
-                        });
-                    }
-                }
+                    Title = title,
+                    Url = $"https://www.tempo.co{href}"
+                });
             }
             
             // Store parsed list in Redis cache with 30-minute expiration
@@ -149,8 +152,8 @@ public class TempoParserService : IParserService
             var titleElement = document.QuerySelector("h1");
             var title = titleElement?.Text() ?? "";
 
-            // Extract subtitle/description
-            titleElement!.ParentElement!.QuerySelector("[data-v-19f156b9]")!.Remove();
+            // Remove first item bisnis
+            titleElement!.ParentElement!.FirstChild!.RemoveFromParent();
             
 
             var subtitleParent = titleElement!.ParentElement!;
@@ -206,7 +209,24 @@ public class TempoParserService : IParserService
     {
         try
         {
-            _rubrikSlug = url.Replace("https://", "").Split("/")[1];
+            // Extract the path after the domain
+            var urlParts = url.Replace("https://", "").Replace("http://", "").Split("/");
+            
+            // Handle URLs like "ekonomi/bisnis" or just "ekonomi"
+            if (urlParts.Length >= 3)
+            {
+                // URL format: tempo.co/ekonomi/bisnis
+                _rubrikSlug = $"{urlParts[1]}/{urlParts[2]}";
+            }
+            else if (urlParts.Length == 2)
+            {
+                // URL format: tempo.co/ekonomi
+                _rubrikSlug = urlParts[1];
+            }
+            else
+            {
+                throw new Exception("Invalid URL format");
+            }
         }
         catch (Exception e)
         {

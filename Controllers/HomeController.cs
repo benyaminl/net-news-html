@@ -29,14 +29,14 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
             service!.GetService<TempoParserService>()!,
         };
 
-        var titles = new[] { "Kontan Investasi", "Kontan Fintech", "Kontan Berita", "JagatReview Notebook", "Tempo Ekonomi" };
+        var titles = new[] { "Kontan Investasi", "Kontan Fintech", "Kontan Berita", "JagatReview Notebook", "Tempo Bisnis" };
         var homeUrls = new[]
         {
             "https://investasi.kontan.co.id",
             "https://www.kontan.co.id/search/?search=fintech",
             "https://nasional.kontan.co.id",
             "https://www.jagatreview.com/category/mobile-computing/",
-            "https://www.tempo.co/ekonomi"
+            "https://www.tempo.co/ekonomi/bisnis"
         };
 
         var tasks = parserServices.Select((ps, i) =>
