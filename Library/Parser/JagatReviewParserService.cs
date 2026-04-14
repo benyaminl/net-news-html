@@ -39,7 +39,7 @@ public class JagatReviewParserService : IParserService
         var data = _redis.StringGet(listUrl);
         if (!data.IsNull)
         {
-            _listNews = JsonSerializer.Deserialize<List<NewsItem>>(data);
+            _listNews = JsonSerializer.Deserialize<List<NewsItem>>(data!) ?? new List<NewsItem>();
             return this;
         }
         #endregion
@@ -51,7 +51,7 @@ public class JagatReviewParserService : IParserService
             IDocument document = await parser.ParseDocumentAsync(resp);
             foreach (var el in document.QuerySelectorAll(".ct__main *[id*='article-'] a h2"))
             {
-                var head = el.ParentElement;
+                var head = el.ParentElement!;
                 string title = el.Text();
                 string url = ((IHtmlAnchorElement)head).Href;
                 
@@ -165,12 +165,8 @@ public class JagatReviewParserService : IParserService
         var data = _redis.StringGet($"date:{listUrl}");
         if (!data.IsNull)
         {
-            var dateTime = JsonSerializer.Deserialize<DateTime>(data);
+            var dateTime = JsonSerializer.Deserialize<DateTime>(data!);
             return dateTime;
-        }
-        else
-        {
-            _redis.StringSet($"date:{listUrl}", JsonSerializer.Serialize(newDate), TimeSpan.FromMinutes(30));
         }
         #endregion
 

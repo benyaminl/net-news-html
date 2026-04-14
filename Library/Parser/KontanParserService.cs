@@ -66,7 +66,7 @@ public class KontanParserService : IParserService
                         });
                     }
                 }
-                catch(Exception e) {
+                catch {
                     
                 }
             }
@@ -156,12 +156,8 @@ public class KontanParserService : IParserService
         var data = _redis.StringGet($"date:{listUrl}");
         if (!data.IsNull)
         {
-            var dateTime = JsonSerializer.Deserialize<DateTime>(data);
+            var dateTime = JsonSerializer.Deserialize<DateTime>(data!);
             return dateTime;
-        }
-        else
-        {
-            _redis.StringSet($"date:{listUrl}", JsonSerializer.Serialize(newDate), TimeSpan.FromMinutes(30));
         }
         #endregion
 

@@ -69,7 +69,7 @@ public class TempoParserService : IParserService
             
             foreach (var link in links)
             {
-                var href = link.GetAttribute("href");
+                var href = link.GetAttribute("href") ?? "";
                 var title = link.TextContent.Trim();
                 
                 // Skip empty titles or non-article links
@@ -159,7 +159,7 @@ public class TempoParserService : IParserService
             var subtitleParent = titleElement!.ParentElement!;
             var subtitleElement = subtitleParent;
             titleElement.Remove();
-            var subtitle = subtitleElement?.Html() ?? "";
+            var subtitle = subtitleElement.Html()!;
             
         
             // Extract article content
