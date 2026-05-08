@@ -21,6 +21,7 @@ public class NewsHeader
     }
 
     public string Title { get; set; }
+    public string Slug { get; set; } = "";
     public DateTime LastUpdate { get; set; }
     public List<NewsItem> News { get; set; }
 }

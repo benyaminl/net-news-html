@@ -6,6 +6,7 @@ using net_news_html.Library.Storage;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.DataProtection;
 using net_news_html.Library.Usecase;
+using net_news_html.Library.Background;
 using Library.Interface;
 using Library.Storage;
 
@@ -51,6 +52,8 @@ builder.Services.AddScoped<INewsStorage, NewsStorageCookieImpl>();
 builder.Services.AddScoped<INewsPersistenceStrorage, NewsStorageSqliteImpl>();
 builder.Services.AddScoped<ISyncCookieUsecase, SyncCookieDBUsecase>();
 builder.Services.AddScoped<IPassStorage, PassStorageSqliteImpl>();
+builder.Services.AddScoped<INewsFetchService, NewsFetchService>();
+builder.Services.AddHostedService<NewsBackgroundService>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -92,5 +95,11 @@ app.UseRouting();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapGet("/admin/fetch", async (INewsFetchService svc) =>
+{
+    await svc.FetchAllAsync();
+    return svc.GetSources().Select(s => s.Slug);
+});
 
 app.Run();

@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Web;
 using Library.Interface;
 using Microsoft.AspNetCore.DataProtection;
@@ -10,50 +9,33 @@ using net_news_html.Library.Interface;
 using net_news_html.Library.Parser;
 using net_news_html.Models;
 using net_news_html.Library.ViewModel;
+using StackExchange.Redis;
 
 namespace net_news_html.Controllers;
 
-public class HomeController(ILogger<HomeController> logger, IServiceProvider service, IHttpClientFactory clientFactory, INewsStorage newsStorage, IDataProtectionProvider dataProtectionProvider, IPassStorage passStorage) : Controller
+public class HomeController(ILogger<HomeController> logger, IServiceProvider service, IHttpClientFactory clientFactory, INewsStorage newsStorage, IDataProtectionProvider dataProtectionProvider, IPassStorage passStorage, INewsFetchService fetchService, ConnectionMultiplexer redis) : Controller
 {
     private readonly ILogger<HomeController> _logger = logger;
-
+    private readonly IDatabase _redis = redis.GetDatabase();
 
     public async Task<IActionResult> Index()
     {
-        var parserServices = new List<IParserService>
+        var sources = fetchService.GetSources();
+        var data = new List<NewsHeader>();
+
+        foreach (var (slug, title, url) in sources)
         {
-            service!.GetService<KontanParserService>()!,
-            service!.GetService<KontanParserService>()!,
-            service!.GetService<KontanParserService>()!,
-            service!.GetService<JagatReviewParserService>()!,
-            service!.GetService<TempoParserService>()!,
-        };
+            var listRaw = await _redis.StringGetAsync($"feed:{slug}:list");
+            var dateRaw = await _redis.StringGetAsync($"feed:{slug}:date");
 
-        var titles = new[] { "Kontan Investasi", "Kontan Fintech", "Kontan Berita", "JagatReview Notebook", "Tempo Bisnis" };
-        var homeUrls = new[]
-        {
-            "https://investasi.kontan.co.id",
-            "https://www.kontan.co.id/search/?search=fintech",
-            "https://nasional.kontan.co.id",
-            "https://www.jagatreview.com/category/mobile-computing/",
-            "https://www.tempo.co/ekonomi/bisnis"
-        };
+            var items = listRaw.IsNull
+                ? new List<NewsItem>()
+                : JsonSerializer.Deserialize<List<NewsItem>>(listRaw!) ?? new List<NewsItem>();
 
-        var tasks = parserServices.Select((ps, i) =>
-        {
-            ps.SetListUrl(homeUrls[i]);
-            return ps.FetchList();
-        }).ToArray();
+            var date = dateRaw.IsNull ? DateTime.UtcNow : DateTime.Parse(dateRaw!);
 
-        var results = await Task.WhenAll(tasks);
-
-        var data = Enumerable.Range(0, parserServices.Count)
-            .Select(i => new NewsHeader(
-                title: titles[i],
-                data: results[i].GetNewsItems(),
-                date: results[i].GetLastUpdate()
-            ))
-            .ToList();
+            data.Add(new NewsHeader(title: title, data: items, date: date) { Slug = slug });
+        }
 
         return View(data);
     }
@@ -62,57 +44,50 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
     public async Task<IActionResult> Proxy([FromRoute] string url)
     {
         url = HttpUtility.UrlDecode(url);
-        
         var client = clientFactory.CreateClient();
         var result = await client.GetStreamAsync(url);
-        
         return Ok(result);
-    }    
-    
+    }
+
     [HttpGet("/news/{url}")]
     public async Task<IActionResult> News([FromRoute] string url)
     {
         Console.WriteLine(url);
         url = HttpUtility.UrlDecode(url);
-        
+
         List<IParserService> parserServices =
         [
             service!.GetService<KontanParserService>()!,
-            service!.GetService<KontanParserService>()!,            
+            service!.GetService<KontanParserService>()!,
             service!.GetService<KontanParserService>()!,
             service!.GetService<JagatReviewParserService>()!,
             service!.GetService<TempoParserService>()!,
         ];
-        
-        string[] homeUrls = [
+
+        string[] homeUrls =
+        [
             "https://investasi.kontan.co.id",
             "https://keuangan.kontan.co.id",
             "https://nasional.kontan.co.id",
             "https://www.jagatreview.com",
-            "https://www.tempo.co" 
+            "https://www.tempo.co"
         ];
 
         ParsedNews? result = null;
 
         for (int i = 0; i < homeUrls.Length; i++)
         {
-            var homeUrl = homeUrls[i];
-
-            if (url.Contains(homeUrl))
-            {
+            if (url.Contains(homeUrls[i]))
                 result = await parserServices[i].GetParsePage(url);
-            }
         }
 
-        if (result == null)
+        result ??= new ParsedNews
         {
-            result = new ParsedNews { 
-                Title = "Not Found", 
-                Body = $"There are something wrong, go to <a href='{url}'>Source Page</a> directly."
-            };
-        }
-        
-        return View(model: new {body = result.Body, data = result});
+            Title = "Not Found",
+            Body = $"There are something wrong, go to <a href='{url}'>Source Page</a> directly."
+        };
+
+        return View(model: new { body = result.Body, data = result });
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
@@ -122,6 +97,7 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
     }
 
     private bool userLoggedIn = false;
+
     public override async void OnActionExecuting(ActionExecutingContext context)
     {
         if (context.HttpContext.Request.Cookies["PassKeyId"] != null)
@@ -129,14 +105,10 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
             newsStorage = service!.GetService<INewsPersistenceStrorage>()!;
             userLoggedIn = true;
             var protector = dataProtectionProvider.CreateProtector("PassKeyAuth");
-        
             var passKey = protector.Unprotect(Request.Cookies["PassKeyId"]!);
             var passKeyData = await passStorage.GetPassKey(passKey);
             if (passKeyData != null)
-            {
                 owner = passKeyData.Id;
-            }
-        
         }
         else
         {
@@ -145,7 +117,6 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
         base.OnActionExecuting(context);
     }
 
-    // function to get data from query param with url, title then save to cookie with name "news"
     [HttpGet("/save")]
     public async Task<IActionResult> SaveNews([FromQuery] string url, [FromQuery] string title)
     {
@@ -154,26 +125,22 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
             PassKeyId = owner ?? Guid.Empty,
             Url = url,
             Title = title,
-            SaveDate = DateTime.Now 
+            SaveDate = DateTime.Now
         });
-        
         return Redirect("~/saved");
     }
 
     private Guid? owner = null;
-    // function that return data from cookie with name "news"
+
     [HttpGet("/saved")]
     public async Task<IActionResult> Saved()
     {
-        // TODO: Implement check user logged in or not 
-
         var data = await newsStorage.GetNewsAsync(owner);
         var viewModel = new SavedNewsViewModel()
         {
             listSavedNews = data,
             loggedIn = userLoggedIn
         };
-
         return View("~/Views/Home/ViewSavedNews.cshtml", viewModel);
     }
 
@@ -181,7 +148,6 @@ public class HomeController(ILogger<HomeController> logger, IServiceProvider ser
     public async Task<IActionResult> RemoveSaved([FromQuery] string url)
     {
         await newsStorage.DeleteNewsAsync(url);
-
         return Redirect("~/saved");
     }
 }
