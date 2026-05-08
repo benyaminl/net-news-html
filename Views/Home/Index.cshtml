@@ -14,6 +14,7 @@
     {
         <h1>@d.Title</h1>
         <i>Last Update : @d.LastUpdate.ToString("ddd, dd MMM yyyy HH:mm:ss 'GMT'z")</i>
+        <a href="/rss/@d.Slug" style="margin-left: 8px; font-size: 0.85em;">[RSS]</a>
         <ol>
         @foreach (var n in d.News)
         {
